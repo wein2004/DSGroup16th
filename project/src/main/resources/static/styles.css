@@ -1,0 +1,67 @@
+/* General body styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+
+    background-image: url('/Users/tobyfan/eclipse-workspace/project/midjourney-desktop-background-of-a-cottage-by-the-sea.avif');
+}
+
+/* Container for centering the content */
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Header styling */
+h1 {
+    text-align: center;
+    color: #2c3e50;
+}
+
+/* Search box styling */
+.search-box {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.search-box input {
+    width: 70%;
+    padding: 10px;
+    font-size: 16px;
+}
+
+.search-box button {
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* Styling the results list */
+.results {
+    list-style-type: none;
+    padding: 0;
+}
+
+/* Each result item styling */
+.result-item {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+}
+
+/* Link styling for result titles */
+.result-item a {
+    font-size: 18px;
+    text-decoration: none;
+    color: #2980b9;
+}
+
+.result-item a:hover {
+    text-decoration: underline;
+}
+
+/* Error message styling */
+.error-message {
+    color: red;
+    text-align: center;
+    font-size: 18px;
+}

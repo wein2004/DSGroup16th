@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Search Results</title>
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Coogle</h1>
+
+        <!-- Search box -->
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Enter search term..." />
+            <button onclick="search()">Search</button>
+        </div>
+
+        <!-- Display error or results -->
+        <div class="error-message" id="error-message"></div>
+        <ul class="results" id="results"></ul>
+    </div>
+
+    <script>
+        function search() {
+            // Clear previous results or error message
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('error-message').innerText = '';
+
+            const query = document.getElementById('search-input').value;
+
+            if (!query) {
+                document.getElementById('error-message').innerText = 'Please enter a search term!';
+                return;
+            }
+
+            // Fetch search results from the backend API
+            fetch(`http://localhost:8080/search?keyword=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        // If there's an error (e.g., no results or request failure)
+                        document.getElementById('error-message').innerText = data.error;
+                    } else {
+                        // Display results
+                        const resultsList = document.getElementById('results');
+                        Object.keys(data).forEach(title => {
+                            const li = document.createElement('li');
+                            li.className = 'result-item';
+
+                            // Create the result link
+                            const a = document.createElement('a');
+                            a.href = data[title];
+                            a.target = '_blank';
+                            a.innerText = title;
+
+                            li.appendChild(a);
+                            resultsList.appendChild(li);
+                        });
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('error-message').innerText = 'Failed to fetch search results!';
+                    console.error(error);
+                });
+        }
+    </script>
+
+</body>
+</html>
