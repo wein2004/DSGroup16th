@@ -7,27 +7,29 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
-
+import java.util.List;
+import java.util.Set;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-
+import google.model.Keyword;
 
 public class GoogleQuery {
     public String searchKeyword;
     public String url;
-    public String content;
-    // public List<Keyword> keywords;
+    public List<Keyword> keywords;
 
-    public GoogleQuery(String searchKeyword) {
+    public GoogleQuery(String searchKeyword, List<Keyword> keywords) {
         this.searchKeyword = searchKeyword;
+        this.keywords = keywords;
         try {
             String encodeKeyword = java.net.URLEncoder.encode(searchKeyword, "utf-8");
-            this.url = "https://www.google.com/search?q=" + encodeKeyword + "&oe=utf8&num=30";
+            this.url = "https://www.google.com/search?q=" + encodeKeyword + "&oe=utf8&num=20";
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -38,7 +40,7 @@ public class GoogleQuery {
 
         URL u = new URL(pageUrl);
         URLConnection conn = u.openConnection();
-        conn.setRequestProperty("User-agent", "Mozilla/5.0");
+        conn.setRequestProperty("User-Agent", "Mozilla/5.0");
         InputStream in = conn.getInputStream();
 
         InputStreamReader inReader = new InputStreamReader(in, "utf-8");
@@ -58,43 +60,45 @@ public class GoogleQuery {
         HashMap<String, String> urlMap = new HashMap<>();
         // 使用 LinkedHashMap 確保有序
         LinkedHashMap<String, String> sortedResults = new LinkedHashMap<>();
+        // 跟蹤已處理的 URL，避免重複
+        Set<String> processedUrls = new HashSet<>();
 
-        // 遍歷抓取多個頁面的搜尋結果
-        for (int page = 0; page < 3; page++) { // 假設我們抓取前 5 頁的結果
-            String pageUrl = url + "&start=" + (page * 30); // 每一頁的 URL，頁數從 0 開始
-            String content = fetchContent(pageUrl); // 獲取指定頁面的 HTML 內容
-            
-            // 解析 HTML 文件
-            Document doc = Jsoup.parse(content);
-            Elements lis = doc.select("div.kCrYT");
+        // 只抓取第一頁的搜尋結果
+        String content = fetchContent(url);
+        Document doc = Jsoup.parse(content);
+        Elements lis = doc.select("div.kCrYT");
 
-            for (Element li : lis) {
-                try {
-                    // 提取網址
-                    String citeUrl = li.select("a").get(0).attr("href").replace("/url?q=", "");
-                    String cleanUrl = removeTrackingParameters(citeUrl);
+        for (Element li : lis) {
+            try {
+                String citeUrl = li.select("a").get(0).attr("href").replace("/url?q=", "");
+                String cleanUrl = removeTrackingParameters(citeUrl);
 
-                    // 提取標題
-                    String title = li.select("a").get(0).select(".vvjwJb").text();
-                    if (title.isEmpty()) {
+                if (processedUrls.contains(cleanUrl)) continue;
+                processedUrls.add(cleanUrl);
+
+                String title = li.select("a").get(0).select(".vvjwJb").text();
+                if (title.isEmpty()) continue;
+
+                int totalScore = 0;
+
+                for (Keyword keyword : keywords) {
+                    WordCounter counter = new WordCounter(cleanUrl);
+                    try {
+                        int count = counter.countKeyword(keyword.getName());
+                        totalScore += count * keyword.getWeight();
+                    } catch (IOException e) {
                         continue;
                     }
-
-                    // 計算分數（如網頁無法訪問則略過）
-                    WordCounter counter = new WordCounter(cleanUrl);
-                    int count = counter.countKeyword("taiwan");
-
-                    // 只儲存有效分數的網頁
-                    if (count > 0) {
-                        resultScores.put(title, count);
-                        urlMap.put(title, cleanUrl);
-                        System.out.println(cleanUrl + " Score " + count);
-                    }
-
-                } catch (IndexOutOfBoundsException | IOException e) {
-                    // 略過有錯誤的網頁
-                    continue;
                 }
+
+                if (totalScore > 0) {
+                    resultScores.put(title, totalScore);
+                    urlMap.put(title, cleanUrl);
+                    System.out.println(cleanUrl + " Score " + totalScore);
+                }
+
+            } catch (IndexOutOfBoundsException e) {
+                continue;
             }
         }
 
@@ -109,33 +113,25 @@ public class GoogleQuery {
 
     private String removeTrackingParameters(String url) {
         if (url == null || url.isEmpty()) {
-            return url; // 如果 URL 為空，直接返回
+            return url;
         }
-    
+
         try {
-            // 移除 Google 特有的 "/url?q=" 前綴
             if (url.startsWith("/url?q=")) {
                 url = url.replace("/url?q=", "");
             }
-    
-            // 在第一個 "&" 處截斷 URL，移除多餘的追蹤參數
+
             int ampIndex = url.indexOf('&');
             if (ampIndex != -1) {
-                url = url.substring(0, ampIndex); // 只保留 "&" 之前的部分
+                url = url.substring(0, ampIndex);
             }
-    
-            // 使用 URL 類解析 URL，確保格式正確
+
             URL parsedUrl = new URL(url);
-    
-            // 返回只包含協議、主機名和路徑的乾淨 URL
             return parsedUrl.getProtocol() + "://" + parsedUrl.getHost() + parsedUrl.getPath();
-    
+
         } catch (Exception e) {
-            // 如果解析出錯，返回原始 URL 並打印錯誤訊息
             System.out.println("解析 URL 時出現錯誤：" + url);
             return url;
         }
     }
-    
-    
 }

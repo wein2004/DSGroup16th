@@ -2,20 +2,26 @@
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
-
-    background-image: url('/Users/tobyfan/eclipse-workspace/project/midjourney-desktop-background-of-a-cottage-by-the-sea.avif');
+    background-image: url('/images/background/midjourney-desktop-background-of-a-cottage-by-the-sea.avif'); /* 更新為相對路徑 */
+    background-size: cover; /* 讓背景圖片覆蓋整個畫面 */
+    background-position: center;
 }
 
 /* Container for centering the content */
 .container {
     max-width: 800px;
     margin: 0 auto;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.8); /* 使背景略微透明，增加可讀性 */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Header styling */
 h1 {
     text-align: center;
     color: #2c3e50;
+    font-size: 36px;
 }
 
 /* Search box styling */
@@ -28,34 +34,45 @@ h1 {
     width: 70%;
     padding: 10px;
     font-size: 16px;
+    border: 2px solid #2980b9;
+    border-radius: 4px;
 }
 
 .search-box button {
     padding: 10px 15px;
     font-size: 16px;
     cursor: pointer;
+    background-color: #2980b9;
+    color: white;
+    border: none;
+    border-radius: 4px;
+}
+
+.search-box button:hover {
+    background-color: #3498db;
 }
 
 /* Styling the results list */
-.results {
+.results, .related-searches {
     list-style-type: none;
     padding: 0;
 }
 
 /* Each result item styling */
-.result-item {
+.result-item, .related-item {
     border-bottom: 1px solid #ddd;
     padding: 10px 0;
+    margin: 5px 0;
 }
 
 /* Link styling for result titles */
-.result-item a {
+.result-item a, .related-item a {
     font-size: 18px;
     text-decoration: none;
     color: #2980b9;
 }
 
-.result-item a:hover {
+.result-item a:hover, .related-item a:hover {
     text-decoration: underline;
 }
 
@@ -64,4 +81,23 @@ h1 {
     color: red;
     text-align: center;
     font-size: 18px;
+}
+
+/* Styling for related searches section */
+#relatedSearchesSection {
+    margin-top: 20px;
+}
+
+#relatedSearchesSection h2 {
+    font-size: 24px;
+    color: #2c3e50;
+}
+
+.related-item a {
+    font-size: 16px;
+    color: #8e44ad;
+}
+
+.related-item a:hover {
+    text-decoration: underline;
 }

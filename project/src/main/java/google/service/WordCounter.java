@@ -22,22 +22,19 @@ public class WordCounter {
         conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36");
     
         try (InputStream in = conn.getInputStream();
-             BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
+             BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"))) { // 使用UTF-8編碼處理中文等字符
     
             StringBuilder retVal = new StringBuilder();
             String line;
     
             while ((line = br.readLine()) != null) {
-                line = line.replaceAll("[^\\x00-\\x7F]", ""); // 過濾非 ASCII 字符
-                retVal.append(line).append("\n");
+                retVal.append(line).append("\n"); // 保留所有字符
             }
             return retVal.toString();
     
         } catch (FileNotFoundException e) {
-            System.out.println("File not found: " + this.urlStr);
             return ""; // 返回空內容
         } catch (IOException e) {
-            System.out.println("Error fetching content: " + e.getMessage());
             throw e; // 重新拋出以便調試其他問題
         }
     }
@@ -48,8 +45,8 @@ public class WordCounter {
         int m = P.length();
         if (m == 0) return 0; // 關鍵字為空時直接返回 0
 
-        int[] L = new int[256]; // 支援 ASCII 字符
-        for (int k = 0; k < 256; k++) {
+        int[] L = new int[Character.MAX_VALUE]; // 支援所有Unicode字符
+        for (int k = 0; k < Character.MAX_VALUE; k++) {
             L[k] = -1;
         }
 
@@ -80,20 +77,26 @@ public class WordCounter {
         if (content == null) {
             content = fetchContent();
         }
-
-        // 將內容與關鍵字轉換為大寫，進行不區分大小寫的搜尋
-        String upperContent = content.toUpperCase();
-        String upperKeyword = keyword.toUpperCase();
-
+    
+        // 使用UTF-8編碼，並進行不區分大小寫的搜尋
+        String upperContent = content.toLowerCase();  // 使用小寫來進行不區分大小寫的比較
+        String upperKeyword = keyword.toLowerCase();
+    
         int count = 0;
         int position = 0;
-
+    
         // 使用 Boyer-Moore 演算法計算關鍵字次數
-        while ((position = BoyerMoore(upperContent, upperKeyword)) != -1) {
-            count++;
-            position += upperKeyword.length(); // 移動到下一個搜尋起點
-            upperContent = upperContent.substring(position); // 避免重新創建大字串
+        while (position < upperContent.length()) {
+            int foundAt = BoyerMoore(upperContent.substring(position), upperKeyword);  // 從當前位置開始搜尋
+            if (foundAt == -1) {
+                break;  // 沒有找到則退出循環
+            }
+            
+            count++;  // 找到一個匹配
+            position += foundAt + upperKeyword.length();  // 移動到下一個搜尋起點
         }
+    
         return count;
     }
+    
 }
