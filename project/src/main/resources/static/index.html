@@ -21,6 +21,10 @@
         <!-- Display error or results -->
         <div class="error-message" id="error-message"></div>
         <ul class="results" id="results"></ul>
+
+        <!-- 相關搜尋結果 -->
+        <h3>Related Searches</h3>
+        <ul class="related-searches" id="related-searches"></ul>
     </div>
 
     <script>
@@ -28,6 +32,7 @@
             // Clear previous results or error message
             document.getElementById('results').innerHTML = '';
             document.getElementById('error-message').innerText = '';
+            document.getElementById('related-searches').innerText = '';
 
             const query = document.getElementById('search-input').value;
 
@@ -46,25 +51,46 @@
                     } else {
                         // Display results
                         const resultsList = document.getElementById('results');
-                        Object.keys(data).forEach(title => {
+                        resultsList.innerHTML = ''; // 清空舊的結果
+
+                        const mainResults = data.mainResults;
+                        Object.keys(mainResults).forEach(title => {
                             const li = document.createElement('li');
                             li.className = 'result-item';
 
                             // Create the result link
                             const a = document.createElement('a');
-                            a.href = data[title];
+                            a.href = mainResults[title];
                             a.target = '_blank';
                             a.innerText = title;
 
                             li.appendChild(a);
                             resultsList.appendChild(li);
                         });
-                    }
-                })
-                .catch(error => {
-                    document.getElementById('error-message').innerText = 'Failed to fetch search results!';
-                    console.error(error);
-                });
+
+                        const relatedSearchList = document.getElementById('related-searches');
+                        relatedSearchList.innerHTML = ''; // 清空舊的結果
+
+                        const relatedSearches = data.relatedSearches;
+                        relatedSearches.forEach(related => {
+                            const li = document.createElement('li');
+                            li.className = 'related-item';
+                            const a = document.createElement('a');
+                            a.href = "#";
+                            a.innerText = related;
+                            a.onclick = function () {
+                                document.getElementById('search-input').value = related;
+                                search(); // 再次觸發搜尋，查詢相關關鍵字
+                            };
+                            li.appendChild(a);
+                            relatedSearchList.appendChild(li);
+                    });
+                }
+            })
+            .catch(error => {
+                document.getElementById('error-message').innerText = 'Failed to fetch search results!';
+                console.error(error);
+            });
         }
     </script>
 

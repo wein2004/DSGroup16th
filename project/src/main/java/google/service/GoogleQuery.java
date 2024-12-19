@@ -6,11 +6,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Set;
+
+
+import java.util.*;
+import java.util.concurrent.*;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -18,6 +17,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import google.model.Keyword;
+
 
 public class GoogleQuery {
     public String searchKeyword;
@@ -29,7 +29,7 @@ public class GoogleQuery {
         this.keywords = keywords;
         try {
             String encodeKeyword = java.net.URLEncoder.encode(searchKeyword, "utf-8");
-            this.url = "https://www.google.com/search?q=" + encodeKeyword + "&oe=utf8&num=20";
+            this.url = "https://www.google.com/search?q=" + encodeKeyword  + "台灣運動賽事隊伍" + "&oe=utf8&num=20";
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -41,6 +41,7 @@ public class GoogleQuery {
         URL u = new URL(pageUrl);
         URLConnection conn = u.openConnection();
         conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+        
         InputStream in = conn.getInputStream();
 
         InputStreamReader inReader = new InputStreamReader(in, "utf-8");
@@ -53,64 +54,186 @@ public class GoogleQuery {
         return retVal.toString();
     }
 
+    // 計算頁面分數
+    private int calculatePageScore(String url) throws IOException {
+        int score = 0;
+        WordCounter counter = new WordCounter(url);
+        for (Keyword keyword : keywords) {
+            try {
+                int count = counter.countKeyword(keyword.getName());
+                score += count * keyword.getWeight();
+            } catch (IOException e) {
+                continue;
+            }
+        }
+        return score;
+    }
+
+
+
+    // 抓取子頁面連結
+    private List<String> fetchSubPages(String url) throws IOException {
+        List<String> subPages = new ArrayList<>();
+        try {
+            String content = fetchContent(url);
+            Document doc = Jsoup.parse(content);
+            Elements links = doc.select("a[href]");
+
+            for (Element link : links) {
+                String subPageUrl = link.attr("abs:href");
+                if (subPageUrl.startsWith(url)) { // 確保是子網頁
+                    subPages.add(subPageUrl);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Error fetching sub-pages for URL: " + url);
+        }
+        return subPages;
+    }
+
+    public List<String> relatedSearch() throws IOException{
+        List<String> relatedSearchResults = new ArrayList<>();
+        try {
+            String content = fetchContent(url);
+            Document doc = Jsoup.parse(content);
+            Elements relatedSearches = doc.select("div.kjGX2");
+            for (Element search : relatedSearches) {
+                // 提取每個相關搜尋的文本
+                String searchText = search.select("div.kjGX2").text();
+                relatedSearchResults.add(searchText); // 保存每個搜尋項目的文字
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println(relatedSearchResults);
+        return relatedSearchResults;
+    }
+
+    // public List<String> relatedSearch() {
+    //     List<String> relatedSearchResults = new ArrayList<>();
+    //     WebDriver driver = null;
+
+    //     try {
+    //         // 設定 ChromeDriver 路徑
+    //         System.setProperty("webdriver.chrome.driver", "/Users/tobyfan/chromedriver/chromedriver");
+
+    //         // 初始化 WebDriver
+    //         driver = new ChromeDriver();
+
+    //         // 打開搜尋結果頁面
+    //         driver.get(url);
+
+    //         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    //         WebElement elements = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//b[.//span[@class='dg6jd']]")));
+
+    //         // 找到相關搜尋的元素 (Google 通常將相關搜尋放在頁面底部)
+    //         List<WebElement> relatedElements = driver.findElements(By.xpath("//span[@class='dg6jd']/ancestor::b"));
+
+
+
+
+    //         // 提取每個相關搜尋的文字
+    //         for (WebElement element : relatedElements) {
+    //             String text = element.getText();
+    //             if (!text.isEmpty()) {
+    //                 relatedSearchResults.add(text);
+    //             }
+    //         }
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //     } finally {
+    //         if (driver != null) {
+    //             driver.quit(); // 確保資源釋放
+    //         }
+    //     }
+    //     System.out.println(relatedSearchResults);
+    //     return relatedSearchResults;
+    // }
+
+
     public LinkedHashMap<String, String> query() throws IOException {
-        // 儲存網頁標題與分數的映射
-        HashMap<String, Integer> resultScores = new HashMap<>();
-        // 儲存標題與網址的映射
-        HashMap<String, String> urlMap = new HashMap<>();
-        // 使用 LinkedHashMap 確保有序
+        Map<String, Integer> resultScores = new ConcurrentHashMap<>();
+        Map<String, String> urlMap = new ConcurrentHashMap<>();
         LinkedHashMap<String, String> sortedResults = new LinkedHashMap<>();
-        // 跟蹤已處理的 URL，避免重複
-        Set<String> processedUrls = new HashSet<>();
+        Set<String> processedUrls = Collections.synchronizedSet(new HashSet<>());
 
         // 只抓取第一頁的搜尋結果
         String content = fetchContent(url);
         Document doc = Jsoup.parse(content);
         Elements lis = doc.select("div.kCrYT");
 
+        // 建立執行緒池
+        int threadCount = Math.min(20, Runtime.getRuntime().availableProcessors() * 2);
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        List<Future<Void>> futures = new ArrayList<>();
+
+        // 處理每個搜尋結果
         for (Element li : lis) {
             try {
                 String citeUrl = li.select("a").get(0).attr("href").replace("/url?q=", "");
                 String cleanUrl = removeTrackingParameters(citeUrl);
 
-                if (processedUrls.contains(cleanUrl)) continue;
+                if (processedUrls.contains(cleanUrl)) continue; // 跳過已處理過的 URL
                 processedUrls.add(cleanUrl);
 
-                String title = li.select("a").get(0).select(".vvjwJb").text();
-                if (title.isEmpty()) continue;
-
-                int totalScore = 0;
-
-                for (Keyword keyword : keywords) {
-                    WordCounter counter = new WordCounter(cleanUrl);
+                // 提交任務來處理主頁和子網頁
+                futures.add(executor.submit(() -> {
                     try {
-                        int count = counter.countKeyword(keyword.getName());
-                        totalScore += count * keyword.getWeight();
-                    } catch (IOException e) {
-                        continue;
+                        String title = li.select("a").get(0).select(".vvjwJb").text();
+                        if (title.isEmpty()) return null;
+
+                        // 計算主頁分數
+                        int mainPageScore = calculatePageScore(cleanUrl);
+
+                        // 計算子網頁分數
+                        int subPageScore = 0;
+                        List<String> subPages = fetchSubPages(cleanUrl);
+                        for (String subPage : subPages) {
+                            if (processedUrls.contains(subPage)) continue;
+                            processedUrls.add(subPage);
+                            subPageScore += calculatePageScore(subPage);
+                        }
+
+                        // 總分 = 主頁分數 + 子網頁分數
+                        int totalScore = mainPageScore + subPageScore;
+
+                        // 如果有有效分數，將結果存入 map
+                        if (totalScore > 0) {
+                            resultScores.put(title, totalScore);
+                            urlMap.put(title, cleanUrl);
+                            System.out.println(cleanUrl + " Total Score " + totalScore);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                }
-
-                if (totalScore > 0) {
-                    resultScores.put(title, totalScore);
-                    urlMap.put(title, cleanUrl);
-                    System.out.println(cleanUrl + " Score " + totalScore);
-                }
-
+                    return null;
+                }));
             } catch (IndexOutOfBoundsException e) {
                 continue;
             }
         }
 
-        // 按分數排序並組織結果
+        // 等待所有任務完成
+        for (Future<Void> future : futures) {
+            try {
+                future.get(); // 等待每個任務執行完畢
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        // 關閉執行緒池
+        executor.shutdown();
+
+        // 按照分數排序
         resultScores.entrySet()
             .stream()
-            .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue())) // 分數降序排序
+            .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue())) // 分數降序
             .forEach(entry -> sortedResults.put(entry.getKey(), urlMap.get(entry.getKey())));
-
-        return sortedResults; // 返回已排序的標題和網址
+        return sortedResults; // 返回排序後的結果
     }
 
+    // 去除 URL 中的追蹤參數
     private String removeTrackingParameters(String url) {
         if (url == null || url.isEmpty()) {
             return url;

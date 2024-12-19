@@ -2,9 +2,6 @@
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
-    background-image: url('/images/background/midjourney-desktop-background-of-a-cottage-by-the-sea.avif'); /* 更新為相對路徑 */
-    background-size: cover; /* 讓背景圖片覆蓋整個畫面 */
-    background-position: center;
 }
 
 /* Container for centering the content */
@@ -12,7 +9,7 @@ body {
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
-    background-color: rgba(255, 255, 255, 0.8); /* 使背景略微透明，增加可讀性 */
+    background-color: rgba(255, 255, 255, 0.8);
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
@@ -53,26 +50,25 @@ h1 {
 }
 
 /* Styling the results list */
-.results, .related-searches {
+.results {
     list-style-type: none;
     padding: 0;
 }
 
-/* Each result item styling */
-.result-item, .related-item {
+.result-item {
     border-bottom: 1px solid #ddd;
     padding: 10px 0;
     margin: 5px 0;
 }
 
 /* Link styling for result titles */
-.result-item a, .related-item a {
+.result-item a {
     font-size: 18px;
     text-decoration: none;
     color: #2980b9;
 }
 
-.result-item a:hover, .related-item a:hover {
+.result-item a:hover {
     text-decoration: underline;
 }
 
@@ -88,16 +84,40 @@ h1 {
     margin-top: 20px;
 }
 
-#relatedSearchesSection h2 {
+/* Related search heading styling */
+#relatedSearchesSection h3 {
     font-size: 24px;
     color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+/* Related searches items styling (Google-style) */
+#related-searches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* 自動調整列數 */
+    gap: 15px; /* 元素之間的間距 */
+}
+
+.related-item {
+    list-style-type: none; /* 移除預設的列表樣式 */
 }
 
 .related-item a {
-    font-size: 16px;
-    color: #8e44ad;
+    font-size: 16px; /* 字體大小 */
+    font-weight: bold; /* 加粗文字 */
+    text-align: center; /* 文字置中 */
+    text-decoration: none; /* 移除下劃線 */
+    color: white; /* 文字顏色 */
+    padding: 12px 15px; /* 內距 */
+    background-color: #2c3e50; /* 按鈕背景色 */
+    border-radius: 8px; /* 圓角 */
+    transition: transform 0.2s ease, background-color 0.3s ease; /* 動態效果 */
+    display: block; /* 讓連結占滿父元素 */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 陰影 */
 }
 
 .related-item a:hover {
-    text-decoration: underline;
+    background-color: #34495e; /* 滑過時背景色變化 */
+    transform: scale(1.05); /* 滑過時縮放效果 */
+    text-decoration: none; /* 確保無下劃線 */
 }
