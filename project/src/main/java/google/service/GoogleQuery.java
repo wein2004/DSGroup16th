@@ -29,7 +29,7 @@ public class GoogleQuery {
         this.keywords = keywords;
         try {
             String encodeKeyword = java.net.URLEncoder.encode(searchKeyword, "utf-8");
-            this.url = "https://www.google.com/search?q=" + encodeKeyword  + "台灣運動賽事隊伍" + "&oe=utf8&num=20";
+            this.url = "https://www.google.com/search?q=" + encodeKeyword  + "台灣運動賽事隊伍" + "&oe=utf8&num=30";
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
