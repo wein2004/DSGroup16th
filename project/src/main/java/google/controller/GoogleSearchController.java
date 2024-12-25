@@ -38,7 +38,28 @@ public class GoogleSearchController {
         keywords.add(new Keyword("運動賽事", 8));  
         keywords.add(new Keyword("體育", 6));  
         keywords.add(new Keyword("台灣體育新聞", 10));  
-        keywords.add(new Keyword("運動員", 7));
+        keywords.add(new Keyword("運動員", 7));  
+        keywords.add(new Keyword("台灣奧運選手", 7));   
+        keywords.add(new Keyword("台灣羽球", 8));  
+        keywords.add(new Keyword("台灣游泳", 7));  
+        keywords.add(new Keyword("台灣足球", 6));  
+        keywords.add(new Keyword("台灣乒乓球", 6));  
+        keywords.add(new Keyword("台灣武術", 5));  
+        keywords.add(new Keyword("台灣滑雪", 4));  
+        keywords.add(new Keyword("台灣馬拉松", 9));  
+        keywords.add(new Keyword("國際賽事", 8));  
+        keywords.add(new Keyword("台灣青少年運動", 6));  
+        keywords.add(new Keyword("全國運動會", 5));  
+        keywords.add(new Keyword("台灣健身", 7));  
+        keywords.add(new Keyword("台灣運動明星", 11));  
+        keywords.add(new Keyword("球隊文化", 7));  
+        keywords.add(new Keyword("體育賽事直播", 8));  
+        keywords.add(new Keyword("體育賽事票券", 6));  
+        keywords.add(new Keyword("運動品牌", 5));  
+        keywords.add(new Keyword("台灣健身房", 7));  
+        keywords.add(new Keyword("運動醫學", 6));  
+        keywords.add(new Keyword("運動科學", 5));  
+
 
         
         GoogleQuery googleQuery = new GoogleQuery(keyword, keywords);
