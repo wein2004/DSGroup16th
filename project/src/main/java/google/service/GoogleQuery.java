@@ -37,22 +37,33 @@ public class GoogleQuery {
 
     private String fetchContent(String pageUrl) throws IOException {
         StringBuilder retVal = new StringBuilder();
-
-        URL u = new URL(pageUrl);
-        URLConnection conn = u.openConnection();
-        conn.setRequestProperty("User-Agent", "Mozilla/5.0");
-        
-        InputStream in = conn.getInputStream();
-
-        InputStreamReader inReader = new InputStreamReader(in, "utf-8");
-        BufferedReader bufReader = new BufferedReader(inReader);
-        String line;
-
-        while ((line = bufReader.readLine()) != null) {
-            retVal.append(line);
+    
+        try {
+            URL u = new URL(pageUrl);
+            URLConnection conn = u.openConnection();
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+    
+            InputStream in = conn.getInputStream();
+    
+            InputStreamReader inReader = new InputStreamReader(in, "utf-8");
+            BufferedReader bufReader = new BufferedReader(inReader);
+            String line;
+    
+            while ((line = bufReader.readLine()) != null) {
+                retVal.append(line);
+            }
+    
+            // 延遲以減少請求頻率
+            Thread.sleep(1000); // 延遲 1 秒
+    
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("請求被中斷", e);
         }
+    
         return retVal.toString();
     }
+    
 
     // 計算頁面分數
     private int calculatePageScore(String url) throws IOException {
