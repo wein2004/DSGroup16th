@@ -82,18 +82,23 @@ public class GoogleQuery {
 
 
 
-    // 抓取子頁面連結
+    // 抓取子頁面連結 (限制為最多抓取 5 個)
     private List<String> fetchSubPages(String url) throws IOException {
         List<String> subPages = new ArrayList<>();
         try {
             String content = fetchContent(url);
             Document doc = Jsoup.parse(content);
             Elements links = doc.select("a[href]");
+            int count = 0;
 
             for (Element link : links) {
                 String subPageUrl = link.attr("abs:href");
                 if (subPageUrl.startsWith(url)) { // 確保是子網頁
                     subPages.add(subPageUrl);
+                    count++;
+                    if (count >= 5) { // 最多抓取 5 個
+                        break;
+                    }
                 }
             }
         } catch (IOException e) {
@@ -101,6 +106,7 @@ public class GoogleQuery {
         }
         return subPages;
     }
+
 
     public List<String> relatedSearch() throws IOException{
         List<String> relatedSearchResults = new ArrayList<>();
@@ -224,10 +230,12 @@ public class GoogleQuery {
             }
         }
 
-        // 等待所有任務完成
         for (Future<Void> future : futures) {
             try {
-                future.get(); // 等待每個任務執行完畢
+                future.get(10, TimeUnit.SECONDS); // 設定超時為 10 秒
+            } catch (TimeoutException e) {
+                System.out.println("計算分數任務超時，跳過該頁面");
+                future.cancel(true); // 中止超時的任務
             } catch (Exception e) {
                 e.printStackTrace();
             }
